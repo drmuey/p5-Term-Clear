@@ -7,6 +7,11 @@ our $VERSION = '0.01';
 our $POSIX   = 0;        # off by default since some folks like to avoid loading POSIX
 our $_clear_str;         # our for testing; _ for don’t use this directly
 
+sub import {
+    $POSIX = 1 if grep { $_ eq "POSIX" } @_;
+    return 1;
+}
+
 sub clear {
     $_clear_str //= _get_clear_str();
     print $_clear_str;
@@ -95,6 +100,9 @@ If you want it to try to do that you have two options:
 
 =item set C<$Term::Clear::POSIX> to true before your first call to C<clear()>.
 
+=item set C<$Term::Clear::POSIX> to true via C<import()>:
+
+    use Term::Clear 'POSIX';
 =back
 
 =head1 DIAGNOSTICS
