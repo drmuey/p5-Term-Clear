@@ -3,7 +3,41 @@ package Term::Clear;
 use strict;
 use warnings;
 
-$Term::Clear::VERSION = '0.01';
+our $VERSION = '0.01';
+
+our $_clear_str;    # out for testing; _ for don’t use this directly
+
+sub clear {
+    $_clear_str //= get_clear_str();
+    print $_clear_str;
+}
+
+# blatently stolen and slightly modified from PerlPowerTools v1.012 bin/clear
+sub get_clear_str {
+    eval { require Term::Cap };
+    if ($@) {
+
+        # kind of gross but works a lot of places; patches welcome :)
+        return scalar(`/usr/bin/clear`);
+    }
+
+    my $OSPEED = 9600;
+    eval {
+        require POSIX;
+        my $termios = POSIX::Termios->new();
+        $termios->getattr;
+        $OSPEED = $termios->getospeed;
+    };
+
+    my $terminal = Term::Cap->Tgetent( { OSPEED => $OSPEED } );
+    my $cl = "";
+    eval {
+        $terminal->Trequire("cl");
+        $cl = $terminal->Tputs( 'cl', 1 );
+    };
+
+    return $cl;
+}
 
 1;
 
@@ -11,8 +45,7 @@ __END__
 
 =head1 NAME
 
-Term::Clear - [One line description of module's purpose here]
-
+Term::Clear - `clear` the terminal via a perl function
 
 =head1 VERSION
 
@@ -20,14 +53,10 @@ This document describes Term::Clear version 0.01
 
 =head1 SYNOPSIS
 
-    use Term::Clear;
+    use Term::Clear ();
 
-=for author to fill in:
-    Brief code example(s) here showing commonest usage(s).
-    This section will be as far as many users bother reading
-    so make it as educational and exeplary as possible.
-  
-  
+    Term::Clear::clear();
+
 =head1 DESCRIPTION
 
 =for author to fill in:
@@ -35,7 +64,7 @@ This document describes Term::Clear version 0.01
     Use subsections (=head2, =head3) as appropriate.
 
 
-=head1 INTERFACE 
+=head1 INTERFACE
 
 =for author to fill in:
     Write a separate section listing the public components of the modules
@@ -75,7 +104,7 @@ This document describes Term::Clear version 0.01
     files, and the meaning of any environment variables or properties
     that can be set. These descriptions must also include details of any
     configuration language used.
-  
+
 Term::Clear requires no configuration files or environment variables.
 
 
