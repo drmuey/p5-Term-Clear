@@ -13,19 +13,14 @@ sub clear {
 }
 
 sub _get_clear_str {
+    local $@;
+
     eval { require Term::Cap };
-    if ($@) {            # kind of gross but works a lot of places; patches welcome :)
-        if ( $^O eq 'MSWin32' ) {
-            return scalar(`cls`);
-        }
-        else {
-            return scalar(`/usr/bin/clear`);
-        }
-    }
+    return _get_from_system_call() if $@;    # kind of gross but works a lot of places; patches welcome :)
 
     # blatently stolen and slightly modified from PerlPowerTools v1.016 bin/clear
     my $OSPEED = 9600;
-    if ( $POSIX || $INC{"POSIX.pm"} ) {    # only do this if they want it or have already loaded POSIX
+    if ( $POSIX || $INC{"POSIX.pm"} ) {      # only do this if they want it or have already loaded POSIX
         eval {
             require POSIX;
             my $termios = POSIX::Termios->new();
@@ -41,16 +36,17 @@ sub _get_clear_str {
         $cl = $terminal->Tputs( 'cl', 1 );
     };
 
-    if ( $cl eq "" ) {    # kind of gross but works a lot of places; patches welcome :)
-        if ( $^O eq 'MSWin32' ) {
-            return scalar(`cls`);
-        }
-        else {
-            return scalar(`/usr/bin/clear`);
-        }
-    }
+    return _get_from_system_call() if $cl eq "";    # kind of gross but works a lot of places; patches welcome :)
 
     return $cl;
+}
+
+sub _get_from_system_call {
+    if ( $^O eq 'MSWin32' ) {
+        return scalar(`cls`);
+    }
+
+    return scalar(`/usr/bin/clear`);
 }
 
 1;
