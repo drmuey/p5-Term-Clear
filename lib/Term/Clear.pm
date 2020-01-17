@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = '0.01';
 
-our $_clear_str;    # out for testing; _ for don’t use this directly
+our $_clear_str;    # our for testing; _ for don’t use this directly
 
 sub clear {
     $_clear_str //= _get_clear_str();
