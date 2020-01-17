@@ -4,8 +4,8 @@ use strict;
 use warnings;
 
 our $VERSION = '0.01';
-
-our $_clear_str;    # our for testing; _ for don’t use this directly
+our $POSIX   = 0;        # off by default since some folks like to avoid loading POSIX
+our $_clear_str;         # our for testing; _ for don’t use this directly
 
 sub clear {
     $_clear_str //= _get_clear_str();
@@ -14,7 +14,7 @@ sub clear {
 
 sub _get_clear_str {
     eval { require Term::Cap };
-    if ($@) {       # kind of gross but works a lot of places; patches welcome :)
+    if ($@) {            # kind of gross but works a lot of places; patches welcome :)
         if ( $^O eq 'MSWin32' ) {
             return scalar(`cls`);
         }
@@ -25,12 +25,14 @@ sub _get_clear_str {
 
     # blatently stolen and slightly modified from PerlPowerTools v1.016 bin/clear
     my $OSPEED = 9600;
-    eval {
-        require POSIX;
-        my $termios = POSIX::Termios->new();
-        $termios->getattr;
-        $OSPEED = $termios->getospeed;
-    };
+    if ( $POSIX || $INC{"POSIX.pm"} ) {    # only do this if they want it or have already loaded POSIX
+        eval {
+            require POSIX;
+            my $termios = POSIX::Termios->new();
+            $termios->getattr;
+            $OSPEED = $termios->getospeed;
+        };
+    }
 
     my $terminal = Term::Cap->Tgetent( { OSPEED => $OSPEED } );
     my $cl = "";
@@ -80,6 +82,24 @@ Perl function to replace C<system("clear")>.
 =head2 clear()
 
 Takes no arguments and clears the terminal screen in as portable way as possible.
+
+Once it does all the work to determine the characters for the system the value is cached in memory so subsequent calls will be faster.
+
+=head2 POSIX
+
+By default it does not try to determine C<OSPEED> from POSIX.
+
+This is because some prefer to avoid loading POSIX for various reasons.
+
+If you want it to try to do that you have two options:
+
+=over 4
+
+=item load POSIX.pm before your first call to C<clear()>.
+
+=item set C<$Term::Clear::POSIX> to true before your first call to C<clear()>.
+
+=back
 
 =head1 DIAGNOSTICS
 
