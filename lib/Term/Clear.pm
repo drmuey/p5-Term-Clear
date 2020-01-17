@@ -8,19 +8,22 @@ our $VERSION = '0.01';
 our $_clear_str;    # out for testing; _ for don’t use this directly
 
 sub clear {
-    $_clear_str //= get_clear_str();
+    $_clear_str //= _get_clear_str();
     print $_clear_str;
 }
 
-# blatently stolen and slightly modified from PerlPowerTools v1.012 bin/clear
-sub get_clear_str {
+sub _get_clear_str {
     eval { require Term::Cap };
-    if ($@) {
-
-        # kind of gross but works a lot of places; patches welcome :)
-        return scalar(`/usr/bin/clear`);
+    if ($@) {       # kind of gross but works a lot of places; patches welcome :)
+        if ( $^O eq 'MSWin32' ) {
+            return scalar(`cls`);
+        }
+        else {
+            return scalar(`/usr/bin/clear`);
+        }
     }
 
+    # blatently stolen and slightly modified from PerlPowerTools v1.016 bin/clear
     my $OSPEED = 9600;
     eval {
         require POSIX;
@@ -36,12 +39,23 @@ sub get_clear_str {
         $cl = $terminal->Tputs( 'cl', 1 );
     };
 
+    if ( $cl eq "" ) {    # kind of gross but works a lot of places; patches welcome :)
+        if ( $^O eq 'MSWin32' ) {
+            return scalar(`cls`);
+        }
+        else {
+            return scalar(`/usr/bin/clear`);
+        }
+    }
+
     return $cl;
 }
 
 1;
 
 __END__
+
+=encoding utf-8
 
 =head1 NAME
 
@@ -59,77 +73,29 @@ This document describes Term::Clear version 0.01
 
 =head1 DESCRIPTION
 
-=for author to fill in:
-    Write a full description of the module and its features here.
-    Use subsections (=head2, =head3) as appropriate.
-
+Perl function to replace C<system("clear")>.
 
 =head1 INTERFACE
 
-=for author to fill in:
-    Write a separate section listing the public components of the modules
-    interface. These normally consist of either subroutines that may be
-    exported, or methods that may be called on objects belonging to the
-    classes provided by the module.
+=head2 clear()
 
+Takes no arguments and clears the terminal screen in as portable way as possible.
 
 =head1 DIAGNOSTICS
 
-=for author to fill in:
-    List every single error and warning message that the module can
-    generate (even the ones that will "never happen"), with a full
-    explanation of each problem, one or more likely causes, and any
-    suggested remedies.
-
-=over
-
-=item C<< Error message here, perhaps with %s placeholders >>
-
-[Description of error here]
-
-=item C<< Another error message here >>
-
-[Description of error here]
-
-[Et cetera, et cetera]
-
-=back
-
+Throws no warnings or errors of its own.
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-=for author to fill in:
-    A full explanation of any configuration system(s) used by the
-    module, including the names and locations of any configuration
-    files, and the meaning of any environment variables or properties
-    that can be set. These descriptions must also include details of any
-    configuration language used.
-
 Term::Clear requires no configuration files or environment variables.
-
 
 =head1 DEPENDENCIES
 
-=for author to fill in:
-    A list of all the other modules that this module relies upon,
-    including any restrictions on versions, and an indication whether
-    the module is part of the standard Perl distribution, part of the
-    module's distribution, or must be installed separately. ]
-
-None.
-
+It will use L<Term::Cap> and L<POSIX::Termios> if available.
 
 =head1 INCOMPATIBILITIES AND LIMITATIONS
 
-=for author to fill in:
-    A list of any modules that this module cannot be used in conjunction
-    with. This may be due to name conflicts in the interface, or
-    competition for system or program resources, or due to internal
-    limitations of Perl (for example, many modules that use source code
-    filters are mutually incompatible).
-
 None reported.
-
 
 =head1 BUGS AND FEATURES
 
@@ -140,14 +106,12 @@ Please report any bugs or feature requests (and a pull request for bonus points)
 
 Daniel Muey  C<< <http://drmuey.com/cpan_contact.pl> >>
 
-
 =head1 LICENCE AND COPYRIGHT
 
 Copyright (c) 2020, Daniel Muey C<< <http://drmuey.com/cpan_contact.pl> >>. All rights reserved.
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
-
 
 =head1 DISCLAIMER OF WARRANTY
 
