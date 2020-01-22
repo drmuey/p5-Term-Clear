@@ -34,9 +34,9 @@ sub _get_clear_str {
         };
     }
 
-    my $terminal = Term::Cap->Tgetent( { OSPEED => $OSPEED } );
     my $cl = "";
     eval {
+        my $terminal = Term::Cap->Tgetent( { OSPEED => $OSPEED } );
         $terminal->Trequire("cl");
         $cl = $terminal->Tputs( 'cl', 1 );
     };
