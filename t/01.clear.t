@@ -1,4 +1,5 @@
 use Test::Spec;
+use Test::MockModule;
 
 our @qx_calls;
 our @qx_ret = ("CLEAR SEQUENCE $^O $$\n");
@@ -56,12 +57,65 @@ describe "Term::Clear" => sub {
             is $trap->stdout, "I am cached $$";
         };
 
-        it "should do system call if Term::Cap can’t be loaded";
-        it "should try to do POSIX if POSIX was enabled";
-        it "should try to do POSIX if POSIX.pm is loade";
-        it "should use Term::Cap’s result";
-        it "should do system call if Term::Cap’s result is empty";
+        it "should do system call if Term::Cap can’t be loaded" => sub {
+            local @INC = ( sub { die "no Term::Cap for you\n" } );
+            trap { Term::Clear::clear() };
+            is $trap->stdout, $qx_ret[0];
+
+        };
+
+        it "should try to do POSIX if POSIX was enabled" => sub {
+            $Term::Clear::POSIX = 1;
+            my ( $termcap, $posix ) = _get_mocked_modules();
+            trap { Term::Clear::clear() };
+            is $termcap->{_Tgetent_arg}{OSPEED}, $$ + 42;
+        };
+
+        it "should try to do POSIX if POSIX.pm is loadded" => sub {
+            local $INC{"POSIX.pm"} = "1";
+            my ( $termcap, $posix ) = _get_mocked_modules();
+            trap { Term::Clear::clear() };
+            is $termcap->{_Tgetent_arg}{OSPEED}, $$ + 42;
+        };
+
+        it "should use Term::Cap’s result" => sub {
+            my ( $termcap, $posix ) = _get_mocked_modules();
+            trap { Term::Clear::clear() };
+            is $trap->stdout, "term cap result";
+        };
+
+        it "should do system call if Term::Cap’s result is empty" => sub {
+            my ( $termcap, $posix ) = _get_mocked_modules();
+            $termcap->redefine( Tputs => sub { return "" } );
+            trap { Term::Clear::clear() };
+            is $trap->stdout, $qx_ret[0];
+        };
     };
 };
 
 runtests unless caller;
+
+###############
+#### helpers ##
+###############
+
+sub _get_mocked_modules {
+
+    # do not want to load so we mock instead of redefine (in case its not loaded) or define (in case it is loaded)
+    local $INC{"POSIX/Termios.pm"} = 1;
+    local $INC{"POSIX.pm"}         = 1;
+    local $INC{"Term/Cap.pm"}      = 1;
+
+    my $termcap = Test::MockModule->new("Term::Cap");
+
+    $termcap->mock( Tgetent => sub { shift; $termcap->{_Tgetent_arg} = shift; return bless $termcap->{_Tgetent_arg}, "Term::Cap" } )
+        ->mock( Trequire => sub { } )
+        ->mock( Tputs => sub { return "term cap result" } );
+
+    my $posix = Test::MockModule->new("POSIX::Termios")
+        ->mock( new => sub { bless {}, "POSIX::Termios" } )
+        ->mock( getattr => sub { } )
+        ->mock( getospeed => sub { return $$ + 42 } );
+
+    return ( $termcap, $posix );
+}

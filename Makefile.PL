@@ -16,9 +16,11 @@ WriteMakefile(
     VERSION_FROM  => 'lib/Term/Clear.pm',
     ABSTRACT_FROM => 'lib/Term/Clear.pm',
     PL_FILES      => {},
-    PREREQ_PM     => {                                                    # Do not add POSIX, its a best effort if you have it sort of situation
-        'Test::More' => 0,
-        'Term::Cap'  => 0,
+    PREREQ_PM     => {                                                    # Do not add POSIX, its a best effort if you want it and have it sort of situation
+        'Term::Cap'        => 0,
+        'Test::Spec'       => 0,
+        'Test::MockModule' => 0,
+        'Test::Mock::Cmd'  => 0,
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES    => 'Term-Clear-*' },
