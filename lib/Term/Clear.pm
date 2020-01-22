@@ -103,6 +103,7 @@ If you want it to try to do that you have two options:
 =item set C<$Term::Clear::POSIX> to true via C<import()>:
 
     use Term::Clear 'POSIX';
+
 =back
 
 =head1 DIAGNOSTICS
